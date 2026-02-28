@@ -293,7 +293,12 @@ export default function App() {
   const pollRef = useRef(null);
   const endRef  = useRef(null);
 
-  useEffect(()=>{ setTimeout(()=>setBoot(false),1800); },[]);
+  // On page load: reset backend state so dashboard and server are in sync
+  useEffect(()=>{
+    setTimeout(()=>setBoot(false),1800);
+    // Auto-reset backend when browser loads/refreshes
+    fetch(`${API}/api/reset`,{method:'POST'}).catch(()=>{});
+  },[]);
   useEffect(()=>{ endRef.current?.scrollIntoView({behavior:"smooth"}); },[logs]);
 
   const stopPoll=useCallback(()=>{

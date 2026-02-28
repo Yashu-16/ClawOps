@@ -48,11 +48,44 @@ export default function ConvosPanel() {
     setMessages(p => [...p, { from, text, ts }]);
   };
 
+  const ORCHESTRATOR = "http://localhost:8001";
+
+  // Fetch real service status from orchestrator
+  const fetchRealStatus = async () => {
+    try {
+      const r = await fetch(`${ORCHESTRATOR}/api/status`);
+      const d = await r.json();
+      const healthy = !d.running && (d.success === true || d.success === null) && !d.completed || (d.completed && d.success);
+      const state = d.running ? "🔄  REPAIRING" : (d.success === false ? "🔴  OFFLINE — last repair FAILED" : "🟢  HEALTHY");
+      const phase = d.phase && d.phase !== "idle" ? `
+Phase:   ${d.phase.toUpperCase()}` : "";
+      const logs  = d.logs?.length ? `
+Log lines: ${d.logs.length}` : "";
+      return `⚡  SERVICE STATUS
+━━━━━━━━━━━━━━━━━━━━━━━━
+State:   ${state}${phase}${logs}
+Port:    localhost:8000`;
+    } catch {
+      return null; // fall through to demo
+    }
+  };
+
   const send = async (text) => {
     if (!text.trim() || loading) return;
     pushMsg("user", text);
     setInput("");
     setLoading(true);
+
+    // Always try real status from orchestrator first for /status command
+    const cmd = text.trim().toLowerCase();
+    if (cmd === "/status" || cmd === "status") {
+      const realStatus = await fetchRealStatus();
+      if (realStatus) {
+        pushMsg("clawops", realStatus);
+        setLoading(false);
+        return;
+      }
+    }
 
     if (!online) {
       // Simulate demo responses when bridge is offline
@@ -238,7 +271,7 @@ function TypingDots() {
 function demoResponse(text) {
   const t = text.toLowerCase().trim();
   if (t.includes("status"))
-    return "🟢  SERVICE STATUS\n━━━━━━━━━━━━━━━━\nState:   HEALTHY\nPort:    localhost:8000";
+    return "⚡  SERVICE STATUS\n━━━━━━━━━━━━━━━━━━━━━━━━\nState:   🟢  HEALTHY\nPort:    localhost:8000\n\n(Connect bridge for live status)";
   if (t.includes("help"))
     return "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n⚡  CLAWOPS COMMANDS\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n/status  — system health\n/inject null_pointer\n/inject sql_error\n/inject infinite_loop\n/postmortem — latest report\n/reset — clear state";
   if (t.includes("inject null"))
