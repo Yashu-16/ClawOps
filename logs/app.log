@@ -1,0 +1,4 @@
+2026-02-28 16:27:59 - ERROR - Traceback (most recent call last):
+2026-02-28 16:27:59 - ERROR -   File "app/broken_module.py", line 18, in process_user_data
+2026-02-28 16:27:59 - ERROR -     result = user_data.get('name')
+2026-02-28 16:27:59 - ERROR - AttributeError: 'NoneType' object has no attribute 'get'
